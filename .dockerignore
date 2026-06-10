@@ -1,0 +1,11 @@
+.git
+.gitignore
+.settings
+.classpath
+.project
+.env
+.sources.txt
+build
+apps
+proj_dev_web.war
+*.log
