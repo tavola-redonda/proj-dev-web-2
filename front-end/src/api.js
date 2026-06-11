@@ -65,13 +65,16 @@ export const api = {
 
   // Cart
   getCarrinho: () => request('/Carrinho', { method: 'GET' }),
-  removerDoCarrinho: (id) => request('/Carrinho', {
-    method: 'GET',
-    path: `/Carrinho?acao=remove&id=${id}` // wait, request takes path, so:
+  removerCarrinhoItem: (id) => request('/Carrinho', {
+    method: 'POST',
+    body: toParams({ acao: 'remove', id }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   }),
-  // Let's make it cleaner:
-  removerCarrinhoItem: (id) => request(`/Carrinho?acao=remove&id=${id}`, { method: 'GET' }),
-  adicionarCarrinhoItem: (id) => request(`/Carrinho?acao=add&id=${id}`, { method: 'GET' }),
+  adicionarCarrinhoItem: (id) => request('/Carrinho', {
+    method: 'POST',
+    body: toParams({ acao: 'add', id }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  }),
 
   // Checkout
   getCheckoutInfo: () => request('/checkout', { method: 'GET' }),
