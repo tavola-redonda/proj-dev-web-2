@@ -33,8 +33,9 @@ export async function request(path, options = {}) {
     return { success: false, unauthorized: true, message: 'Não autenticado' };
   }
 
-  if (!response.ok) {
-    throw new Error(`Erro na requisição: ${response.statusText}`);
+ if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.erro || errorData.message || 'Erro no servidor');
   }
 
   return response.json();
