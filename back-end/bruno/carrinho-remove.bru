@@ -1,0 +1,16 @@
+meta {
+  name: Remover Item do Carrinho
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{base_url}}/Carrinho
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  acao: remove
+  id: 1
+}
