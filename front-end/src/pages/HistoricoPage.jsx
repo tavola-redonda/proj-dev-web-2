@@ -1,5 +1,4 @@
 export default function HistoricoPage({ historico = [] }) {
-  // Escudo 1: Se o Java não mandar nada ou der erro, assume um array vazio
   const safeHistorico = Array.isArray(historico) ? historico : [];
 
   return (
@@ -11,20 +10,32 @@ export default function HistoricoPage({ historico = [] }) {
         </div>
       ) : (
         safeHistorico.map((pedido) => {
-          // Escudo 2: Protege os totais e a lista de itens
           const safeItens = Array.isArray(pedido?.itens) ? pedido.itens : [];
-          const totalSeguro = Number(pedido?.total) || 0;
+
+          // ESCUDO DO TOTAL: Procura o parsedValue dentro do objeto que o Java mandou
+          const totalSeguro = Number(pedido?.total?.parsedValue || pedido?.total || 0);
+
+          // ESCUDO DA DATA: Monta a data no formato BR (DD/MM/YYYY às HH:MM)
+          let dataFormatada = 'Data Indisponível';
+          if (pedido?.criadoEm?.date) {
+            const { day, month, year } = pedido.criadoEm.date;
+            const { hour, minute } = pedido.criadoEm.time || { hour: 0, minute: 0 };
+            dataFormatada = `${day}/${month}/${year} às ${hour}:${String(minute).padStart(2, '0')}`;
+          } else if (typeof pedido?.criadoEm === 'string') {
+            dataFormatada = pedido.criadoEm;
+          }
 
           return (
             <div className="order-card" key={pedido?.id || Math.random()}>
               <div className="order-header">
                 <span className="order-id">Pedido #{pedido?.id}</span>
-                <span className="order-date">{pedido?.criadoEm || 'Data Indisponível'}</span>
+                <span className="order-date">{dataFormatada}</span>
               </div>
 
               <div className="order-items">
                 {safeItens.map((item) => {
-                  const subtotalSeguro = Number(item?.subtotal) || 0;
+                  // ESCUDO DO SUBTOTAL: Pegando o parsedValue do item
+                  const subtotalSeguro = Number(item?.subtotal?.parsedValue || item?.subtotal || 0);
                   
                   return (
                     <div className="order-item-detail" key={item?.id || Math.random()}>

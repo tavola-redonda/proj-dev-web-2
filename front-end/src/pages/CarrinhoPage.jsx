@@ -40,7 +40,6 @@ export default function CarrinhoPage({ cart = [], totalPedido = 0, onUpdateCartI
                   </div>
                   <div className="cart-item-actions">
                     <div className="cart-item-qty">
-                      <button type="button" className="qty-btn" onClick={() => onUpdateCartItem(idSeguro, 'sub')}>-</button>
                       <span style={{ fontWeight: 600, width: '20px', textAlign: 'center' }}>{item?.quantidade || 1}</span>
                       <button type="button" className="qty-btn" onClick={() => onUpdateCartItem(idSeguro, 'add')}>+</button>
                     </div>
