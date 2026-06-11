@@ -1,0 +1,19 @@
+meta {
+  name: Cadastro de Usuário
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/cadastro
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  nome: Teste Bruno
+  email: teste@bruno.com
+  senha: senha123
+  telefone: 11999999999
+  endereco: Rua Teste 123
+}

@@ -1,0 +1,16 @@
+meta {
+  name: Adicionar Quantidade no Carrinho
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{base_url}}/Carrinho
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  acao: add
+  id: 1
+}

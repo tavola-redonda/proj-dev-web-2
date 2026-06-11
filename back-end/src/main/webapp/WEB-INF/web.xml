@@ -17,13 +17,12 @@
     <!-- Redirecionamento do erro 404 -->
     <error-page>
         <error-code>404</error-code>
-        <location>/404.jsp</location>
+        <location>/error</location>
     </error-page>
 
-    <!-- Redirecionamento do erro 500 -->
     <error-page>
         <error-code>500</error-code>
-        <location>/500.jsp</location>
+        <location>/error</location>
     </error-page>
 
 </web-app>
