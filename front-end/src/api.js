@@ -33,8 +33,9 @@ export async function request(path, options = {}) {
     return { success: false, unauthorized: true, message: 'Não autenticado' };
   }
 
-  if (!response.ok) {
-    throw new Error(`Erro na requisição: ${response.statusText}`);
+ if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.erro || errorData.message || 'Erro no servidor');
   }
 
   return response.json();
@@ -65,8 +66,16 @@ export const api = {
 
   // Cart
   getCarrinho: () => request('/Carrinho', { method: 'GET' }),
-  removerCarrinhoItem: (id) => request(`/Carrinho?acao=remove&id=${id}`, { method: 'GET' }),
-  adicionarCarrinhoItem: (id) => request(`/Carrinho?acao=add&id=${id}`, { method: 'GET' }),
+  removerCarrinhoItem: (id) => request('/Carrinho', {
+    method: 'POST',
+    body: toParams({ acao: 'remove', id }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  }),
+  adicionarCarrinhoItem: (id) => request('/Carrinho', {
+    method: 'POST',
+    body: toParams({ acao: 'add', id }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  }),
 
   // Checkout
   getCheckoutInfo: () => request('/checkout', { method: 'GET' }),

@@ -61,9 +61,9 @@ export default function App() {
     try {
       setLoading(true);
       const res = await api.getSession();
-      if (res.success) {
-        setUser(res.usuarioLogado);
-        setCart(res.carrinho || []);
+      if (res.autenticado) { // Mudou de success para autenticado
+        setUser({ nome: res.nome, email: res.email }); // Formato que o Java manda
+        setCart(res.itens || []); // Mudou de carrinho para itens
         setTotalPedido(res.totalPedido || 0);
       }
     } catch (exception) {
@@ -72,7 +72,7 @@ export default function App() {
       setLoading(false);
     }
   };
-
+  
   const fetchCardapio = async () => {
     try {
       setLoading(true);
@@ -85,7 +85,12 @@ export default function App() {
         setHistorico([]);
         setCurrentPage('login');
       } else {
-        setProdutos(res);
+        // CORREÇÃO DA COMUNICAÇÃO: 
+        // O Java manda um Dicionário (Map) agrupado por categorias.
+        // Precisamos extrair apenas os valores (as listas de produtos) e achatar (flat) 
+        // em uma única lista para o filtro do React funcionar.
+        const arrayDeProdutos = Object.values(res).flat();
+        setProdutos(arrayDeProdutos);
       }
     } catch (exception) {
       setError('Erro ao carregar o cardápio.');
@@ -104,7 +109,7 @@ export default function App() {
         setTotalPedido(0);
         setCurrentPage('login');
       } else {
-        setCart(res.carrinho || []);
+        setCart(res.itens || []); // Mudou de carrinho para itens
         setTotalPedido(res.totalPedido || 0);
       }
     } catch (exception) {
@@ -202,21 +207,19 @@ export default function App() {
       setLoading(true);
       const res = await api.login(loginEmail, loginSenha);
 
-      if (res.success) {
-        setUser(res.usuarioLogado);
+      if (res.sucesso) { // Mudou de success para sucesso
+        setUser(res.usuario); // Mudou de usuarioLogado para usuario
         setSuccessMsg('Login realizado com sucesso!');
 
         const cartRes = await api.getCarrinho();
-        if (cartRes.success) {
-          setCart(cartRes.carrinho || []);
-          setTotalPedido(cartRes.totalPedido || 0);
-        }
+        setCart(cartRes.itens || []); // Mudou de carrinho para itens
+        setTotalPedido(cartRes.totalPedido || 0);
 
         setLoginEmail('');
         setLoginSenha('');
         await navigateTo('cardapio');
       } else {
-        setError(res.message || 'E-mail ou senha incorretos.');
+        setError(res.erro || 'E-mail ou senha incorretos.'); // Puxa o erro do Java
       }
     } catch (exception) {
       setError('Erro ao realizar o login.');
@@ -300,12 +303,12 @@ export default function App() {
       setLoading(true);
       const res = await api.adicionarAoCarrinho(produtoId, quantity);
 
-      if (res.success) {
-        setCart(res.carrinho || []);
+      if (!res.erro) { // O Servlet do carrinho não manda "success", então verificamos se não há erro
+        setCart(res.itens || []); // Mudou de carrinho para itens
         setTotalPedido(res.totalPedido || 0);
         setSuccessMsg('Item adicionado ao carrinho!');
       } else {
-        setError(res.message || 'Erro ao adicionar item.');
+        setError(res.erro || 'Erro ao adicionar item.');
       }
     } catch (exception) {
       setError('Erro ao adicionar produto.');
@@ -325,12 +328,12 @@ export default function App() {
         res = await api.removerCarrinhoItem(produtoId);
       }
 
-      if (res.success) {
-        setCart(res.carrinho || []);
+      if (!res.erro) { // Servlet do carrinho não manda "success"
+        setCart(res.itens || []); // Mudou de carrinho para itens
         setTotalPedido(res.totalPedido || 0);
         setSuccessMsg('Carrinho atualizado.');
       } else {
-        setError(res.message || 'Erro ao atualizar carrinho.');
+        setError(res.erro || 'Erro ao atualizar carrinho.');
       }
     } catch (exception) {
       setError('Erro ao atualizar item do carrinho.');
@@ -338,7 +341,6 @@ export default function App() {
       setLoading(false);
     }
   };
-
   const handleCheckout = async (event) => {
     event.preventDefault();
 
