@@ -172,7 +172,12 @@ export default function App() {
         setUser(null);
         setCurrentPage('login');
       } else {
-        setProdutos(res);
+        // CORREÇÃO DA COMUNICAÇÃO: 
+        // O Java manda um Dicionário (Map) agrupado por categorias.
+        // Precisamos extrair apenas os valores (as listas de produtos) e achatar (flat) 
+        // em uma única lista para o filtro do React funcionar.
+        const arrayDeProdutos = Object.values(res).flat();
+        setProdutos(arrayDeProdutos);
       }
     } catch (e) {
       setError('Erro ao carregar o cardápio.');
