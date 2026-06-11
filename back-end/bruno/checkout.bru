@@ -1,0 +1,15 @@
+meta {
+  name: Finalizar Pedido
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{base_url}}/checkout
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  enderecoEntrega: Rua Teste 456, Centro
+}

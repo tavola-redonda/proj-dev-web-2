@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8080/proj_dev_web';
+const BASE_URL = import.meta.env.VITE_API_URL || '/proj_dev_web';
 
 // Helper to construct query params or form data
 function toParams(data) {
