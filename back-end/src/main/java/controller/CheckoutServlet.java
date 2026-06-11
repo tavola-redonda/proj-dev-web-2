@@ -5,7 +5,7 @@ import java.io.PrintWriter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import com.google.gson.Gson; // Import do Gson
+import com.google.gson.Gson;
 
 import dao.PedidoDAO;
 import jakarta.servlet.ServletException;
