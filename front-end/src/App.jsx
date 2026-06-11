@@ -61,9 +61,9 @@ export default function App() {
     try {
       setLoading(true);
       const res = await api.getSession();
-      if (res.autenticado) { // Mudou de success para autenticado
-        setUser({ nome: res.nome, email: res.email }); // Formato que o Java manda
-        setCart(res.itens || []); // Mudou de carrinho para itens
+      if (res.autenticado) {
+        setUser({ nome: res.nome, email: res.email });
+        setCart(res.itens || []);
         setTotalPedido(res.totalPedido || 0);
       }
     } catch (exception) {
@@ -85,10 +85,6 @@ export default function App() {
         setHistorico([]);
         setCurrentPage('login');
       } else {
-        // CORREÇÃO DA COMUNICAÇÃO: 
-        // O Java manda um Dicionário (Map) agrupado por categorias.
-        // Precisamos extrair apenas os valores (as listas de produtos) e achatar (flat) 
-        // em uma única lista para o filtro do React funcionar.
         const arrayDeProdutos = Object.values(res).flat();
         setProdutos(arrayDeProdutos);
       }
@@ -109,7 +105,7 @@ export default function App() {
         setTotalPedido(0);
         setCurrentPage('login');
       } else {
-        setCart(res.itens || []); // Mudou de carrinho para itens
+        setCart(res.itens || []);
         setTotalPedido(res.totalPedido || 0);
       }
     } catch (exception) {
@@ -126,8 +122,8 @@ export default function App() {
       if (res.unauthorized) {
         setUser(null);
         setCurrentPage('login');
-      } else if (res.success) {
-        setCheckoutEndereco(res.usuario.endereco || '');
+      } else if (res.sucesso || res.success) { // Correção de compatibilidade
+        setCheckoutEndereco(res.usuario?.endereco || '');
       }
     } catch (exception) {
       setError('Erro ao carregar dados de checkout.');
@@ -143,9 +139,9 @@ export default function App() {
       if (res.unauthorized) {
         setUser(null);
         setCurrentPage('login');
-      } else if (res.success) {
-        setProfileNome(res.usuario.nome || '');
-        setProfileEndereco(res.usuario.endereco || '');
+      } else if (res.sucesso || res.success) { // Correção de compatibilidade
+        setProfileNome(res.usuario?.nome || '');
+        setProfileEndereco(res.usuario?.endereco || '');
       }
     } catch (exception) {
       setError('Erro ao carregar perfil.');
@@ -207,19 +203,21 @@ export default function App() {
       setLoading(true);
       const res = await api.login(loginEmail, loginSenha);
 
-      if (res.sucesso) { // Mudou de success para sucesso
-        setUser(res.usuario); // Mudou de usuarioLogado para usuario
+      if (res.sucesso) {
+        setUser(res.usuario);
         setSuccessMsg('Login realizado com sucesso!');
 
         const cartRes = await api.getCarrinho();
-        setCart(cartRes.itens || []); // Mudou de carrinho para itens
-        setTotalPedido(cartRes.totalPedido || 0);
+        if (!cartRes.erro) { // Garante que o fetch do carrinho não falhou
+           setCart(cartRes.itens || []);
+           setTotalPedido(cartRes.totalPedido || 0);
+        }
 
         setLoginEmail('');
         setLoginSenha('');
         await navigateTo('cardapio');
       } else {
-        setError(res.erro || 'E-mail ou senha incorretos.'); // Puxa o erro do Java
+        setError(res.erro || 'E-mail ou senha incorretos.');
       }
     } catch (exception) {
       setError('Erro ao realizar o login.');
@@ -233,7 +231,7 @@ export default function App() {
       setLoading(true);
       const res = await api.logout();
 
-      if (res.success) {
+      if (res.sucesso || res.success) { // Correção de compatibilidade
         setUser(null);
         setCart([]);
         setTotalPedido(0);
@@ -241,7 +239,7 @@ export default function App() {
         setHistorico([]);
         setActiveCategory('Todos');
         setSuccessMsg('Sessão encerrada.');
-        setCurrentPage('home');
+        setCurrentPage('login');
       }
     } catch (exception) {
       setError('Erro ao sair.');
@@ -279,7 +277,7 @@ export default function App() {
         confirmarSenha: registerConfirmarSenha,
       });
 
-      if (res.success) {
+      if (res.sucesso || res.success) { // Correção de compatibilidade
         setSuccessMsg('Cadastro realizado com sucesso! Faça login.');
         setRegisterNome('');
         setRegisterTelefone('');
@@ -289,7 +287,7 @@ export default function App() {
         setRegisterConfirmarSenha('');
         setCurrentPage('login');
       } else {
-        setError(res.message || 'Erro ao realizar cadastro.');
+        setError(res.erro || res.message || 'Erro ao realizar cadastro.');
       }
     } catch (exception) {
       setError('Erro ao realizar o cadastro.');
@@ -303,8 +301,8 @@ export default function App() {
       setLoading(true);
       const res = await api.adicionarAoCarrinho(produtoId, quantity);
 
-      if (!res.erro) { // O Servlet do carrinho não manda "success", então verificamos se não há erro
-        setCart(res.itens || []); // Mudou de carrinho para itens
+      if (!res.erro) {
+        setCart(res.itens || []);
         setTotalPedido(res.totalPedido || 0);
         setSuccessMsg('Item adicionado ao carrinho!');
       } else {
@@ -328,8 +326,8 @@ export default function App() {
         res = await api.removerCarrinhoItem(produtoId);
       }
 
-      if (!res.erro) { // Servlet do carrinho não manda "success"
-        setCart(res.itens || []); // Mudou de carrinho para itens
+      if (!res.erro) {
+        setCart(res.itens || []);
         setTotalPedido(res.totalPedido || 0);
         setSuccessMsg('Carrinho atualizado.');
       } else {
@@ -341,6 +339,7 @@ export default function App() {
       setLoading(false);
     }
   };
+  
   const handleCheckout = async (event) => {
     event.preventDefault();
 
@@ -353,14 +352,14 @@ export default function App() {
       setLoading(true);
       const res = await api.finalizarPedido(checkoutEndereco);
 
-      if (res.success) {
+      if (res.sucesso || res.success) { // Correção de compatibilidade
         setCart([]);
         setTotalPedido(0);
         setSuccessMsg(`Pedido #${res.pedidoId} finalizado com sucesso!`);
         setCurrentPage('historico');
         await fetchHistorico();
       } else {
-        setError(res.message || 'Erro ao finalizar o pedido.');
+        setError(res.erro || res.message || 'Erro ao finalizar o pedido.');
       }
     } catch (exception) {
       setError('Erro ao concluir o pedido.');
@@ -381,11 +380,11 @@ export default function App() {
       setLoading(true);
       const res = await api.atualizarPerfil(profileNome, profileEndereco);
 
-      if (res.success) {
+      if (res.sucesso || res.success) { // Correção de compatibilidade
         setUser(res.usuario);
         setSuccessMsg('Perfil atualizado com sucesso!');
       } else {
-        setError(res.message || 'Erro ao atualizar perfil.');
+        setError(res.erro || res.message || 'Erro ao atualizar perfil.');
       }
     } catch (exception) {
       setError('Erro ao salvar o perfil.');
