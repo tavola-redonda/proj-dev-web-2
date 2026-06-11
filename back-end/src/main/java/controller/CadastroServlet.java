@@ -1,8 +1,10 @@
 package controller;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.io.PrintWriter;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import com.google.gson.Gson;
 
 import dao.UserDAO;
 import jakarta.servlet.ServletException;
@@ -16,71 +18,85 @@ import util.PasswordUtil;
 @WebServlet("/cadastro")
 public class CadastroServlet extends HttpServlet {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
+    private final Gson gson = new Gson();
 
-	@Override
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		request.getRequestDispatcher("cadastro.jsp").forward(request, response);
-	}
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String nome = limpar(request.getParameter("nome"));
-		String telefone = limpar(request.getParameter("telefone"));
-		String email = limpar(request.getParameter("email"));
-		String endereco = limpar(request.getParameter("endereco"));
-		String senha = request.getParameter("senha");
-		String confirmarSenha = request.getParameter("confirmarSenha");
+		response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        PrintWriter out = response.getWriter();
+        
+        Map<String, Object> resposta = new LinkedHashMap<>();
 
-		if (nome.isBlank() || email.isBlank() || senha == null || senha.isBlank()) {
-			responderComErro(request, response, "Preencha nome, email e senha.");
-			return;
-		}
+        String nome = limpar(request.getParameter("nome"));
+        String telefoneRaw = limpar(request.getParameter("telefone"));
+        String email = limpar(request.getParameter("email"));
+        String endereco = limpar(request.getParameter("endereco"));
+        String senha = request.getParameter("senha");
+        String confirmarSenha = request.getParameter("confirmarSenha");
 
-		if (!senha.equals(confirmarSenha)) {
-			responderComErro(request, response, "A senha e a confirmacao nao conferem.");
-			return;
-		}
+        String telefone = telefoneRaw.replaceAll("\\D", "");
 
-		if (senha.length() < 6) {
-			responderComErro(request, response, "A senha precisa ter pelo menos 6 caracteres.");
-			return;
-		}
+        if (nome.isBlank() || email.isBlank() || senha == null || senha.isBlank()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST); // 400 Bad Request
+            resposta.put("erro", "Preencha nome, email e senha.");
+            out.print(this.gson.toJson(resposta));
+            out.flush();
+            return;
+        }
 
-		UserDAO dao = new UserDAO();
-		if (dao.emailJaCadastrado(email)) {
-			responderComErro(request, response, "Ja existe um usuario cadastrado com este email.");
-			return;
-		}
+        if (!senha.equals(confirmarSenha)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resposta.put("erro", "A senha e a confirmação não conferem.");
+            out.print(this.gson.toJson(resposta));
+            out.flush();
+            return;
+        }
 
-		User usuario = new User();
-		usuario.setNome(nome);
-		usuario.setTelefone(telefone);
-		usuario.setEmail(email);
-		usuario.setEndereco(endereco);
-		usuario.setIs_admin(false);
-		usuario.setSenhaHash(PasswordUtil.hashPassword(senha));
+        if (senha.length() < 6) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resposta.put("erro", "A senha precisa ter pelo menos 6 caracteres.");
+            out.print(this.gson.toJson(resposta));
+            out.flush();
+            return;
+        }
 
-		if (dao.criarUsuario(usuario)) {
-			String emailCodificado = URLEncoder.encode(email, StandardCharsets.UTF_8.toString());
-			response.sendRedirect(request.getContextPath() + "/login.jsp?cadastro=ok&email=" + emailCodificado);
-			return;
-		}
+        UserDAO dao = new UserDAO();
+        if (dao.emailJaCadastrado(email)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resposta.put("erro", "Já existe um usuário cadastrado com este e-mail.");
+            out.print(this.gson.toJson(resposta));
+            out.flush();
+            return;
+        }
 
-		responderComErro(request, response, "Nao foi possivel criar o usuario.");
-	}
+        User usuario = new User();
+        usuario.setNome(nome);
+        usuario.setTelefone(telefone);
+        usuario.setEmail(email);
+        usuario.setEndereco(endereco);
+        usuario.setIs_admin(false);
+        usuario.setSenhaHash(PasswordUtil.hashPassword(senha));
 
-	private void responderComErro(HttpServletRequest request, HttpServletResponse response, String mensagem)
-			throws ServletException, IOException {
-		request.setAttribute("erro", mensagem);
-		request.setAttribute("nome", limpar(request.getParameter("nome")));
-		request.setAttribute("telefone", limpar(request.getParameter("telefone")));
-		request.setAttribute("email", limpar(request.getParameter("email")));
-		request.setAttribute("endereco", limpar(request.getParameter("endereco")));
-		request.getRequestDispatcher("cadastro.jsp").forward(request, response);
-	}
+        if (dao.criarUsuario(usuario)) {
+            response.setStatus(HttpServletResponse.SC_CREATED); 
+            resposta.put("sucesso", true);
+            resposta.put("mensagem", "Usuário cadastrado com sucesso!");
+            resposta.put("email", email);
+            out.print(this.gson.toJson(resposta));
+            out.flush();
+            return;
+        }
 
-	private String limpar(String valor) {
-		return valor == null ? "" : valor.trim();
-	}
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // 500 Internal Server Error
+        resposta.put("erro", "Não foi possível criar o usuário no banco de dados.");
+        out.print(this.gson.toJson(resposta));
+        out.flush();
+    }
+
+    private String limpar(String valor) {
+        return valor == null ? "" : valor.trim();
+    }
 }

@@ -1,7 +1,9 @@
 package controller;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
+import com.google.gson.Gson;
 
 import dao.PedidoDAO;
 import jakarta.servlet.ServletException;
@@ -16,20 +18,38 @@ import model.User;
 @WebServlet("/historico-pedidos")
 public class HistoricoPedidosServlet extends HttpServlet {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
+    private final Gson gson = new Gson();
 
-	@Override
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		HttpSession session = request.getSession(false);
-		if (session == null || session.getAttribute("usuarioLogado") == null) {
-			response.sendRedirect("login.jsp");
-			return;
-		}
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-		User usuario = (User) session.getAttribute("usuarioLogado");
-		PedidoDAO pedidoDAO = new PedidoDAO();
-		List<Pedido> pedidos = pedidoDAO.listarPedidosPorUsuario(usuario.getId());
-		request.setAttribute("pedidos", pedidos);
-		request.getRequestDispatcher("historico-pedidos.jsp").forward(request, response);
-	}
+		response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        PrintWriter out = response.getWriter();
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("usuarioLogado") == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401 Unauthorized
+            out.print("{\"erro\": \"Usuário não autenticado. Faça login para ver o histórico.\"}");
+            out.flush();
+            return;
+        }
+
+        User usuario = (User) session.getAttribute("usuarioLogado");
+        
+        try {
+            PedidoDAO pedidoDAO = new PedidoDAO();
+            List<Pedido> pedidos = pedidoDAO.listarPedidosPorUsuario(usuario.getId());
+            
+            response.setStatus(HttpServletResponse.SC_OK);
+            out.print(this.gson.toJson(pedidos));
+            
+        } catch (RuntimeException e) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // 500
+            out.print("{\"erro\": \"Erro ao buscar histórico de pedidos: " + e.getMessage() + "\"}");
+        }
+        
+        out.flush();
+    }
 }
