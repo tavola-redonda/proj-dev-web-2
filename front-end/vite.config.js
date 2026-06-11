@@ -14,7 +14,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/proj_dev_web': {
-        target: 'http://back-end:8080',
+        target: 'http://localhost:8080',
         changeOrigin: true,
       }
     }
