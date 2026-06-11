@@ -65,11 +65,6 @@ export const api = {
 
   // Cart
   getCarrinho: () => request('/Carrinho', { method: 'GET' }),
-  removerDoCarrinho: (id) => request('/Carrinho', {
-    method: 'GET',
-    path: `/Carrinho?acao=remove&id=${id}` // wait, request takes path, so:
-  }),
-  // Let's make it cleaner:
   removerCarrinhoItem: (id) => request(`/Carrinho?acao=remove&id=${id}`, { method: 'GET' }),
   adicionarCarrinhoItem: (id) => request(`/Carrinho?acao=add&id=${id}`, { method: 'GET' }),
 
