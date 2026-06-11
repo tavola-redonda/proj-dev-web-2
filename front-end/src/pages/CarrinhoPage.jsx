@@ -1,11 +1,17 @@
-export default function CarrinhoPage({ cart, totalPedido, onUpdateCartItem, onNavigate }) {
-  const totalItems = cart.reduce((accumulator, item) => accumulator + item.quantidade, 0);
+export default function CarrinhoPage({ cart = [], totalPedido = 0, onUpdateCartItem, onNavigate }) {
+  // Garante que cart é sempre um array, mesmo se o Java demorar a responder
+  const safeCart = Array.isArray(cart) ? cart : [];
+  
+  // Garante que o total é sempre um número válido
+  const safeTotal = Number(totalPedido) || 0;
+
+  const totalItems = safeCart.reduce((accumulator, item) => accumulator + (item?.quantidade || 0), 0);
 
   return (
     <div className="fade-in">
       <h2 className="section-title">Meu Carrinho</h2>
 
-      {cart.length === 0 ? (
+      {safeCart.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 2rem', background: '#fff', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
           <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🛒</div>
           <h3 style={{ marginBottom: '0.5rem', fontWeight: 700 }}>Seu carrinho está vazio</h3>
@@ -15,32 +21,43 @@ export default function CarrinhoPage({ cart, totalPedido, onUpdateCartItem, onNa
       ) : (
         <div className="cart-layout">
           <div className="cart-list">
-            {cart.map((item) => (
-              <div className="cart-item" key={item.produto.id}>
-                <div className="cart-item-info">
-                  <h4>{item.produto.nome}</h4>
-                  <p>{item.produto.categoria} | R$ {item.produto.preco.toFixed(2)} cada</p>
-                </div>
-                <div className="cart-item-actions">
-                  <div className="cart-item-qty">
-                    <button type="button" className="qty-btn" onClick={() => onUpdateCartItem(item.produto.id, 'sub')}>-</button>
-                    <span style={{ fontWeight: 600, width: '20px', textAlign: 'center' }}>{item.quantidade}</span>
-                    <button type="button" className="qty-btn" onClick={() => onUpdateCartItem(item.produto.id, 'add')}>+</button>
+            {safeCart.map((item) => {
+              // O React agora sabe que os dados estão dentro de "itemCardapio"
+              const p = item?.itemCardapio || item?.produto || item || {};
+              
+              const idSeguro = p.id || p.idProduto || p.id_produto;
+              const nomeSeguro = p.nome || 'Produto';
+              const categoriaSegura = p.categoria || 'Sem Categoria';
+              const precoSeguro = Number(p.preco) || 0;
+              // Se o Java não mandar o subtotal, a gente calcula na hora!
+              const subtotalSeguro = Number(item?.subtotal) || (precoSeguro * (item?.quantidade || 1));
+
+              return (
+                <div className="cart-item" key={idSeguro || Math.random()}>
+                  <div className="cart-item-info">
+                    <h4>{nomeSeguro}</h4>
+                    <p>{categoriaSegura} | R$ {precoSeguro.toFixed(2)} cada</p>
                   </div>
-                  <span style={{ fontWeight: 700, minWidth: '80px', textAlign: 'right' }}>R$ {item.subtotal.toFixed(2)}</span>
-                  <button type="button" className="btn btn-ghost" style={{ color: 'var(--danger)', padding: '0.4rem' }} onClick={() => onUpdateCartItem(item.produto.id, 'remove')}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-                  </button>
+                  <div className="cart-item-actions">
+                    <div className="cart-item-qty">
+                      <span style={{ fontWeight: 600, width: '20px', textAlign: 'center' }}>{item?.quantidade || 1}</span>
+                      <button type="button" className="qty-btn" onClick={() => onUpdateCartItem(idSeguro, 'add')}>+</button>
+                    </div>
+                    <span style={{ fontWeight: 700, minWidth: '80px', textAlign: 'right' }}>R$ {subtotalSeguro.toFixed(2)}</span>
+                    <button type="button" className="btn btn-ghost" style={{ color: 'var(--danger)', padding: '0.4rem' }} onClick={() => onUpdateCartItem(idSeguro, 'remove')}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="cart-summary">
             <h3 style={{ marginBottom: '1rem', fontWeight: 700, color: 'var(--secondary)' }}>Resumo da Compra</h3>
             <div className="summary-row">
               <span>Itens ({totalItems})</span>
-              <span>R$ {totalPedido.toFixed(2)}</span>
+              <span>R$ {safeTotal.toFixed(2)}</span>
             </div>
             <div className="summary-row">
               <span>Entrega</span>
@@ -48,7 +65,7 @@ export default function CarrinhoPage({ cart, totalPedido, onUpdateCartItem, onNa
             </div>
             <div className="summary-row summary-row-total">
               <span>Total</span>
-              <span>R$ {totalPedido.toFixed(2)}</span>
+              <span>R$ {safeTotal.toFixed(2)}</span>
             </div>
             <button type="button" className="btn btn-primary" style={{ width: '100%' }} onClick={() => onNavigate('checkout')}>
               Prosseguir para Checkout

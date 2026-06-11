@@ -1,4 +1,8 @@
-export default function CheckoutPage({ cart, totalPedido, checkoutEndereco, setCheckoutEndereco, onSubmit }) {
+export default function CheckoutPage({ cart = [], totalPedido = 0, checkoutEndereco, setCheckoutEndereco, onSubmit }) {
+  // Escudos contra dados indefinidos
+  const safeCart = Array.isArray(cart) ? cart : [];
+  const safeTotal = Number(totalPedido) || 0;
+
   return (
     <div className="fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
       <h2 className="section-title">Finalizar Pedido</h2>
@@ -27,16 +31,23 @@ export default function CheckoutPage({ cart, totalPedido, checkoutEndereco, setC
         <div className="cart-summary" style={{ margin: 0 }}>
           <h3 style={{ fontWeight: 700, marginBottom: '1rem', color: 'var(--secondary)' }}>Produtos no Pedido</h3>
           <div style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-            {cart.map((item) => (
-              <div key={item.produto.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                <span style={{ color: 'var(--text-muted)' }}>{item.quantidade}x {item.produto.nome}</span>
-                <span style={{ fontWeight: 600 }}>R$ {item.subtotal.toFixed(2)}</span>
-              </div>
-            ))}
+            {safeCart.map((item) => {
+              // Mapeamento inteligente para evitar quebra de tela
+              const idSeguro = item?.produto?.id || item?.id || item?.idProduto || item?.produtoId || item?.id_produto;
+              const nomeSeguro = item?.produto?.nome || item?.nome || 'Produto';
+              const subtotalSeguro = Number(item?.subtotal) || 0;
+
+              return (
+                <div key={idSeguro || Math.random()} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>{item?.quantidade || 1}x {nomeSeguro}</span>
+                  <span style={{ fontWeight: 600 }}>R$ {subtotalSeguro.toFixed(2)}</span>
+                </div>
+              );
+            })}
           </div>
           <div className="summary-row summary-row-total" style={{ margin: 0, padding: 0, border: 'none' }}>
             <span>Total</span>
-            <span>R$ {totalPedido.toFixed(2)}</span>
+            <span>R$ {safeTotal.toFixed(2)}</span>
           </div>
         </div>
       </div>
